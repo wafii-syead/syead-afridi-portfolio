@@ -1,0 +1,4 @@
+import type {Metadata} from 'next';
+import './globals.css';
+export const metadata:Metadata={title:'Syead Afridii — Design, code & a little curiosity.',description:'The creative portfolio of Syead Afridii. Explore websites, brand identities, graphic design and video work, made in Sylhet, Bangladesh.',metadataBase:new URL('https://syead-afridii-studio.sunlitmarmalade1.chatgpt.site'),openGraph:{title:'Syead Afridii — Independent creative',description:'Design, code & a little curiosity. Selected work in websites, branding, graphics and motion.',type:'website'},icons:{icon:'/favicon.svg'}};
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>;}

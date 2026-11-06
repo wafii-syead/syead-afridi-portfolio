@@ -1,0 +1,82 @@
+'use client';
+import {useState,useEffect,useRef,type FormEvent} from 'react';
+import {ArrowUpRight,ArrowDown,ArrowRight,ChevronLeft,ChevronRight,Plus,Minus,X,Menu,Play,Pause,Check,Globe,Code2,PenTool,Clapperboard,Sparkles} from 'lucide-react';
+import Orbit from './orbit';
+import {categories,socials,articles,type Project} from './data';
+
+const Arrow=()=> <ArrowUpRight size={18} strokeWidth={1.5}/>;
+function ProjectVisual({p}:{p:Project}){
+ if(p.id==='mocktest'&&p.image==='/assets/blog-atiful.jpg')return <div className="mocktest-art"><img src="/assets/blog-atiful.jpg" alt="Mock Test for IELTS educational cover design" loading="lazy"/><img src="/assets/blog-farhan.jpg" alt="IELTS speaking session cover design" loading="lazy"/></div>;
+ if(p.image)return <img src={p.image} alt={p.title+' project preview'} loading="lazy" className={'project-image '+(p.category==='Branding'?'logo-image':'')}/>;
+ if(p.id==='tanim')return <div className="website-art tanim-art"><div className="mini-nav"><b>TAK.</b><span>Work &nbsp; About &nbsp; Contact ↗</span></div><span className="tiny">PERSONAL PORTFOLIO</span><strong>Tanim<br/>Ahmed Khan<span>®</span></strong><div className="mini-bottom"><span>Creative work.<br/>One digital home.</span><span className="mini-orb">↗</span></div></div>;
+ if(p.id==='aifunis')return <div className="aifunis-art"><Sparkles size={64} strokeWidth={1}/><span>AIFUNIS</span><em>today.</em><small>AN EXPERIMENT IN POSSIBILITIES</small></div>;
+ if(p.category==='Motion')return <div className="motion-art"><div className="film-line"/><Play size={68} strokeWidth={.8}/><span>STORIES IN MOTION</span><small>A selected video project</small></div>;
+ return <div className="type-art">{p.title}<ArrowUpRight size={52}/></div>;
+}
+function Dialog({project,onClose}:{project:Project;onClose:()=>void}){
+ const ref=useRef<HTMLDialogElement>(null);
+ useEffect(()=>{const d=ref.current;d?.showModal();const old=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=old;};},[]);
+ return <dialog ref={ref} className="project-dialog" onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+ <button className="round dialog-close" onClick={onClose} aria-label="Close project"><X size={22}/></button>
+ <div className={'dialog-art card-art '+project.id} style={{'--project-color':project.color} as React.CSSProperties}><ProjectVisual p={project}/></div>
+ <div className="dialog-copy"><span className="eyebrow">{project.category} / {project.contribution}</span><h2>{project.title}</h2><p>{project.description}</p><a className="button lime" href={project.url} target="_blank" rel="noreferrer">{project.category==='Motion'?'Watch original video':project.category==='Websites'?'Visit live website':'Explore original project'}<Arrow/></a></div>
+ </dialog>;
+}
+function ContactForm(){
+ const [state,setState]=useState<'idle'|'sending'|'success'|'error'>('idle'),[error,setError]=useState('');
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget,fd=new FormData(form);setState('sending');try{const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(fd))});const d=await r.json() as {error?:string};if(!r.ok)throw new Error(d.error);setState('success');form.reset();}catch(e){setError(e instanceof Error?e.message:'Please try again.');setState('error');}}
+ return <form className="contact-form" onSubmit={submit}>
+ <div className="field-row"><label>Your name<input name="name" placeholder="How should I call you?" minLength={2} maxLength={100} autoComplete="name" required/></label><label>Email address<input name="email" type="email" placeholder="you@company.com" maxLength={254} autoComplete="email" required/></label></div>
+ <label>What are we creating?<select name="service" defaultValue="" required><option value="" disabled>Select a service</option>{['Website','Brand identity','Graphic design','Video editing','Something else'].map(s=><option key={s}>{s}</option>)}</select></label>
+ <label>A little about your idea<textarea name="message" rows={3} placeholder="Tell me about your project, goals and timeline…" minLength={20} maxLength={5000} required/></label>
+ <label className="honeypot" aria-hidden="true">Leave this empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
+ <div className="form-bottom"><span>Every good project starts<br/>with a conversation.</span><button className="button lime" disabled={state==='sending'}>{state==='sending'?'Sending…':'Send enquiry'}<Arrow/></button></div>
+ <div role="status" aria-live="polite">{state==='success'&&<p className="success"><Check size={16}/> Thanks! Your enquiry is in my inbox.</p>}{state==='error'&&<p className="error">{error}</p>}</div>
+ </form>;
+}
+export default function Portfolio({initialProjects}:{initialProjects:Project[]}){
+ const [category,setCategory]=useState('All work'),[expanded,setExpanded]=useState(false),[active,setActive]=useState(0),[paused,setPaused]=useState(false),[menu,setMenu]=useState(false),[selected,setSelected]=useState<Project|null>(null),[service,setService]=useState<number|null>(0);
+ const featured=initialProjects.filter(p=>p.featured).slice(0,3),current=featured[active%Math.max(featured.length,1)]||initialProjects[0];
+ const filtered=initialProjects.filter(p=>category==='All work'||p.category===category),shown=expanded||category!=='All work'?filtered:filtered.slice(0,6);
+ const select=(n:number)=>setActive((n+featured.length)%Math.max(featured.length,1));
+ const offerings=[
+ {title:'Brand identity',text:'A distinctive logo and a visual language that feel like you. Thoughtful identities built to work across your brand’s everyday touchpoints.',tags:'Logos / Visual direction / Brand assets',icon:PenTool},
+ {title:'Web design & development',text:'Responsive websites that balance expressive design with clear, useful experiences. From a personal portfolio to a complete digital presence.',tags:'Portfolio websites / Frontend / Backend',icon:Code2},
+ {title:'Graphic design',text:'Campaign visuals, social posts and editorial covers that make your message easy to see and hard to scroll past.',tags:'Social media / Campaigns / Editorial',icon:Sparkles},
+ {title:'Video & motion',text:'Video edits that bring a story together through rhythm, pacing and clear visual storytelling.',tags:'Video editing / Reels / Social content',icon:Clapperboard}
+ ];
+ return <main>
+ <a className="skip" href="#work">Skip to selected work</a>
+ <header className="site-header"><a className="wordmark" href="#" aria-label="Syead Afridii home">syead<span>®</span><small>AFRIDII / CREATIVE</small></a>
+ <nav className={menu?'nav open':'nav'} aria-label="Main navigation">{[['Work','#work'],['About','#about'],['Expertise','#expertise'],['Journal','#journal']].map(([t,h])=><a key={t} href={h} onClick={()=>setMenu(false)}>{t}</a>)}</nav>
+ <a className="button header-cta" href="#contact">Let’s talk<Arrow/></a><button className="mobile-menu round" onClick={()=>setMenu(!menu)} aria-label={menu?'Close menu':'Open menu'} aria-expanded={menu}>{menu?<X/>:<Menu/>}</button></header>
+ <section className="hero" aria-labelledby="hero-title">
+  <div className="hero-topline"><span><i className="status-dot"/>Open to creative collaborations</span><span>SYLHET, BANGLADESH · 24.89° N</span></div>
+  <div className="hero-content"><div className="hero-copy"><span className="eyebrow">INDEPENDENT DESIGNER & DEVELOPER</span><h1 id="hero-title">Ideas into<br/><span>orbit.</span><i>✳</i></h1><p>I’m <strong>Syead Afridii.</strong> I connect design, code<br className="desktop"/> and a little curiosity to make brands stand out.</p><a className="button hero-cta" href="#work">Explore my work<ArrowDown size={17}/></a><div className="hero-disciplines">GRAPHICS<span>+</span>WEB<span>+</span>BRANDING<span>+</span>MOTION</div></div>
+  <div className="universe"><Orbit active={active} paused={paused}/><span className="orbit-coordinates">A WORLD OF POSSIBILITIES</span>
+   <button className="main-planet-label" onClick={()=>current&&setSelected(current)} aria-label={'Explore '+current?.title}><span className="planet-symbol">{active===0?<Sparkles strokeWidth={.9} size={66}/>:active===1?<Code2 strokeWidth={.9} size={66}/>:<Globe strokeWidth={.9} size={66}/>}</span><span className="planet-open">EXPLORE PROJECT <ArrowUpRight size={13}/></span></button>
+   <button className="satellite satellite-one" onClick={()=>select(1)} aria-label="Select website project"><Code2 size={25} strokeWidth={1.2}/><span>WEB EXPERIENCES</span></button>
+   <button className="satellite satellite-two" onClick={()=>select(2)} aria-label="Select branding project"><PenTool size={19} strokeWidth={1.2}/><span>BRAND IDENTITIES</span></button>
+   <button className="satellite satellite-three" onClick={()=>select(0)} aria-label="Select graphic design project"><Sparkles size={28} strokeWidth={1.2}/><span>VISUAL STORIES</span></button>
+   <div className="selected-project"><div><span className="eyebrow">SELECTED PROJECT / 0{active+1}</span><button onClick={()=>current&&setSelected(current)}>{current?.title}<Arrow/></button><small>{current?.contribution}</small></div><div className="project-navigation"><button className="round" onClick={()=>select(active-1)} aria-label="Previous featured project"><ChevronLeft size={16}/></button><button className="round" onClick={()=>select(active+1)} aria-label="Next featured project"><ChevronRight size={16}/></button></div></div>
+  </div></div>
+  <div className="horizon"/><div className="hero-bottom"><a href="#work"><ArrowDown size={13}/>SCROLL TO DISCOVER</a><span>DESIGN THAT MOVES IDEAS FORWARD.</span><button onClick={()=>setPaused(!paused)} aria-label={paused?'Resume animation':'Pause animation'}>{paused?<Play size={13}/>:<Pause size={13}/>}<span>{paused?'RESUME MOTION':'PAUSE MOTION'}</span></button></div>
+ </section>
+ <div className="client-strip"><span>CREATIVE CONNECTIONS</span><a href="https://mocktestforielts.com/" target="_blank" rel="noreferrer">Mock Test for IELTS<span><ArrowUpRight size={11}/></span></a><a href="https://www.plexoralab.com/" target="_blank" rel="noreferrer">plexora<span>lab</span></a><a href="https://gigsinfo.com/" target="_blank" rel="noreferrer">Gigsinfo<span><ArrowUpRight size={11}/></span></a><a href="https://londonicrust.com/" target="_blank" rel="noreferrer">Londoni Crust<span><ArrowUpRight size={11}/></span></a></div>
+ <section id="work" className="work section-wrap">
+  <div className="section-heading"><div><span className="eyebrow"><i/>01 / SELECTED WORK</span><h2>A few things<br/>I’ve put into the world<span className="lime-text">.</span></h2></div><p>Different disciplines. One creative mindset.<br/>A selection of brands, websites and visual stories.</p></div>
+  <div className="work-toolbar"><div className="filters" role="group" aria-label="Filter projects">{categories.map(c=><button key={c} className={c===category?'active':''} onClick={()=>{setCategory(c);setExpanded(false);}}>{c}{c==='All work'&&<sup>{initialProjects.length}</sup>}</button>)}</div><span className="small-meta">EXPLORE / 2026</span></div>
+  <div className="project-grid">{shown.map((p,i)=><button key={p.id} className="project-card" onClick={()=>setSelected(p)}><div className={'card-art '+p.id} style={{'--project-color':p.color} as React.CSSProperties}><ProjectVisual p={p}/><span className="card-index">{String(i+1).padStart(2,'0')}</span><span className="card-open"><Arrow/></span></div><div className="card-info"><h3>{p.title}</h3><span>{p.category}</span></div><p>{p.subtitle}</p></button>)}</div>
+  {category==='All work'&&<button className="button outline more-work" onClick={()=>setExpanded(!expanded)}>{expanded?'Show selected projects':'View all '+initialProjects.length+' projects'}{expanded?<Minus size={17}/>:<Plus size={17}/>}</button>}
+  {category!=='All work'&&shown.length===0&&<p className="empty">New work is on the way.</p>}
+ </section>
+ <section id="about" className="about section-wrap"><div className="about-intro"><span className="eyebrow"><i/>02 / THE PERSON BEHIND THE PIXELS</span><h2>Curious mind.<br/>Creative hands<span>✳</span></h2><div className="about-bio"><div className="signature"><img src="/assets/syead-profile.jpg" alt="Syead Afridi handwritten wordmark" loading="lazy"/><small>BASED IN SYLHET, BANGLADESH</small></div><div><p>I’m Syead, a multidisciplinary creative working at the intersection of <strong>design, technology and storytelling.</strong></p><p>From a brand’s first logo to the website it calls home, I enjoy connecting the small details to the bigger idea. My work spans graphic design, web development, social media and video.</p><a href="#contact" className="text-link">Have something in mind? Let’s talk<Arrow/></a></div></div></div>
+ <div className="experience"><span className="eyebrow">WHERE I’VE BEEN CREATING</span>{[{company:'Plexora Lab',role:'Graphic Designer',date:'JAN 2026 — PRESENT',link:'https://www.plexoralab.com/'},{company:'Mock Test for IELTS',role:'Social Media Marketing Manager',date:'FEB 2026 — PRESENT',link:'https://mocktestforielts.com/'},{company:'Plexora Lab',role:'Research & Development Manager',date:'MAR 2026 — PRESENT',link:'https://www.plexoralab.com/'},{company:'Gigsinfo',role:'Data Analyst',date:'',link:'https://gigsinfo.com/'}].map((e,i)=><a href={e.link} target="_blank" rel="noreferrer" className="experience-row" key={i}><span className="experience-number">0{i+1}</span><div><h3>{e.company}</h3><p>{e.role}</p></div><span className="experience-date">{e.date}</span><Arrow/></a>)}</div>
+ </section>
+ <section id="expertise" className="expertise section-wrap"><div className="expertise-title"><span className="eyebrow"><i/>03 / WHAT I CAN BRING</span><h2>From the first spark<br/>to the final pixel<span className="lime-text">.</span></h2><p>One creative partner.<br/>A connected set of skills.</p><a className="button outline" href="#contact">Start a conversation<Arrow/></a></div><div className="services">{offerings.map((o,i)=><div className={'service '+(service===i?'expanded':'')} key={o.title}><button onClick={()=>setService(service===i?null:i)} aria-expanded={service===i}><span className="service-num">0{i+1}</span><h3>{o.title}</h3>{service===i?<Minus size={20}/>:<Plus size={20}/>}</button>{service===i&&<div className="service-body"><o.icon size={34} strokeWidth={1}/><p>{o.text}</p><span>{o.tags}</span></div>}</div>)}</div></section>
+ <section id="journal" className="journal section-wrap"><div className="section-heading"><div><span className="eyebrow"><i/>04 / THE READING ROOM</span><h2>Good stories.<br/>Worth sharing.</h2></div><div><p>Featured reads from Mock Test for IELTS.<br/>Ideas, lessons and a little inspiration.</p><a className="text-link" href="https://mocktestforielts.com/blog" target="_blank" rel="noreferrer">Explore the blog<Arrow/></a></div></div><div className="article-grid">{articles.map(a=><a href={a.url} key={a.url} target="_blank" rel="noreferrer" className="article"><div className="article-image"><img src={a.image} alt={a.title} loading="lazy"/><span className="card-open"><Arrow/></span></div><span className="eyebrow">{a.tag}</span><h3>{a.title}</h3><p>MOCK TEST FOR IELTS <ArrowUpRight size={12}/></p></a>)}</div></section>
+ <section id="contact" className="contact section-wrap"><div className="contact-title"><span className="eyebrow"><i/>05 / YOUR NEXT GOOD IDEA</span><h2>Let’s make<br/>something<br/><em>matter.</em><span><ArrowUpRight size={80} strokeWidth={1}/></span></h2><p>A new brand, a better website, or an idea<br/>that hasn’t found its shape yet. I’m listening.</p><div className="socials">{socials.map(s=><a key={s.name} href={s.url} target="_blank" rel="noreferrer">{s.name}<ArrowUpRight size={13}/></a>)}</div></div><ContactForm/></section>
+ <footer><a className="wordmark" href="#">syead<span>®</span></a><p>© {new Date().getFullYear()} Syead Afridii</p><span>MADE WITH INTENTION. AND CURIOSITY.</span><a href="/admin" className="admin-link">Studio access<ArrowUpRight size={13}/></a><a href="#" className="back-top">Back to top<ArrowUpRight size={15}/></a></footer>
+ {selected&&<Dialog project={selected} onClose={()=>setSelected(null)}/>}
+ </main>;
+}
