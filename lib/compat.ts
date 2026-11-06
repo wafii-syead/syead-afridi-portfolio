@@ -17,6 +17,17 @@ export function getRuntimeEnv(): RuntimeEnv {
   return getGlobalRuntimeEnv();
 }
 
+export type PreparedStatementLike = {
+  bind(...args: any[]): PreparedStatementLike;
+  all<T = any>(): Promise<{ results: T[] }>;
+  first<T = any>(): Promise<T | null>;
+  run(): Promise<{ success: boolean }>;
+};
+
+export type DatabaseLike = {
+  prepare(sql: string): PreparedStatementLike;
+};
+
 type StoredRow = Record<string, any>;
 
 type MemoryStore = {
@@ -42,7 +53,7 @@ function getMemoryStore(): MemoryStore {
   return globalScope.__portfolio_memory_store as MemoryStore;
 }
 
-class MemoryPreparedStatement {
+class MemoryPreparedStatement implements PreparedStatementLike {
   private params: any[] = [];
 
   constructor(
@@ -50,7 +61,7 @@ class MemoryPreparedStatement {
     private readonly store: MemoryStore,
   ) {}
 
-  bind(...args: any[]) {
+  bind(...args: any[]): PreparedStatementLike {
     this.params = args;
     return this;
   }
@@ -157,15 +168,15 @@ class MemoryPreparedStatement {
   }
 }
 
-class MemoryDatabase {
+class MemoryDatabase implements DatabaseLike {
   constructor(private readonly store: MemoryStore) {}
 
-  prepare(sql: string) {
+  prepare(sql: string): PreparedStatementLike {
     return new MemoryPreparedStatement(sql, this.store);
   }
 }
 
-export function getDatabase() {
+export function getDatabase(): DatabaseLike {
   const runtimeEnv = getRuntimeEnv();
   const existingDb = runtimeEnv.DB;
 

@@ -8,5 +8,5 @@ export function getDb() {
     return drizzle(env.DB, { schema });
   }
 
-  return drizzle(getDatabase(), { schema });
+  return drizzle(getDatabase() as any, { schema });
 }
